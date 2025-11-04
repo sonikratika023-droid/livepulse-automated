@@ -7,40 +7,132 @@ import os
 from supabase import create_client, Client
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
-from collections import Counter
-import re
 
 # Page config
 st.set_page_config(
-    page_title="LivePulse - News Analytics Dashboard",
+    page_title="LivePulse v2.0 Enhanced",
     page_icon="📰",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS
+# Custom CSS - CLEAN LIGHT THEME WITH GRADIENT
 st.markdown("""
 <style>
+    /* Light background */
+    .stApp {
+        background-color: #ffffff;
+    }
+    
+    /* Colorful gradient header */
     .main-header {
         font-size: 3rem;
         font-weight: bold;
         text-align: center;
-        margin-bottom: 2rem;
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        padding: 30px;
+        margin-bottom: 10px;
+        background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+        border-radius: 15px;
+        color: white;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
     }
-    .metric-card {
-        background-color: #f0f2f6;
+    
+    .subtitle {
+        text-align: center;
+        color: #6b7280;
+        font-size: 1.2rem;
+        margin-bottom: 30px;
+    }
+    
+    /* Success message with light green */
+    .success-banner {
+        background-color: #d1fae5;
+        border-left: 4px solid #10b981;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin: 20px 0;
+        color: #047857;
+        font-weight: 500;
+    }
+    
+    /* Metric cards styling */
+    div[data-testid="metric-container"] {
+        background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
         padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border: 1px solid #d1d5db;
     }
+    
+    div[data-testid="metric-container"] label {
+        color: #374151 !important;
+        font-weight: 600 !important;
+    }
+    
+    div[data-testid="metric-container"] [data-testid="stMetricValue"] {
+        color: #111827 !important;
+        font-size: 2rem !important;
+    }
+    
+    div[data-testid="metric-container"] [data-testid="stMetricDelta"] {
+        color: #10b981 !important;
+    }
+    
+    /* Sidebar light theme */
+    section[data-testid="stSidebar"] {
+        background-color: #f9fafb;
+        border-right: 1px solid #e5e7eb;
+    }
+    
+    /* Button styling */
     .stButton>button {
         width: 100%;
-        border-radius: 5px;
-        background-color: #667eea;
+        border-radius: 8px;
+        background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
         color: white;
+        border: none;
+        padding: 12px;
+        font-weight: 600;
+        box-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
+    }
+    
+    .stButton>button:hover {
+        background: linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%);
+        box-shadow: 0 4px 8px rgba(99, 102, 241, 0.4);
+    }
+    
+    /* Tab styling for light theme */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: transparent;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background-color: #f3f4f6;
+        border-radius: 8px;
+        color: #374151;
+        padding: 12px 24px;
+        font-weight: 500;
+        border: 1px solid #e5e7eb;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
+        border: none;
+    }
+    
+    /* Subheaders */
+    h2, h3 {
+        color: #111827;
+        font-weight: 600;
+    }
+    
+    /* Expander styling */
+    .streamlit-expanderHeader {
+        background-color: #f9fafb;
+        border-radius: 8px;
+        color: #111827;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -48,10 +140,10 @@ st.markdown("""
 # Initialize Supabase
 @st.cache_resource
 def init_supabase():
-    url = os.getenv("SUPABASE_URL")
-    key = os.getenv("SUPABASE_KEY")
+    url = st.secrets.get("SUPABASE_URL", os.getenv("SUPABASE_URL"))
+    key = st.secrets.get("SUPABASE_KEY", os.getenv("SUPABASE_KEY"))
     if not url or not key:
-        st.error("❌ Supabase credentials not found! Please configure environment variables.")
+        st.error("❌ Supabase credentials not found!")
         st.stop()
     return create_client(url, key)
 
@@ -74,60 +166,67 @@ def load_data():
 
 # Main app
 def main():
-    st.markdown('<h1 class="main-header">📰 LivePulse News Analytics</h1>', unsafe_allow_html=True)
+    # Colorful gradient header
+    st.markdown('<div class="main-header">📰 LivePulse v2.0 Enhanced</div>', unsafe_allow_html=True)
+    st.markdown('<p class="subtitle">Real-Time News Intelligence Dashboard with Advanced AI</p>', unsafe_allow_html=True)
     
     # Sidebar
     with st.sidebar:
-        st.title("⚙️ Controls")
+        st.title("📁 Upload Data")
+        st.info("Upload your enhanced news CSV")
         
-        # Theme toggle
-        theme = st.radio("Theme", ["Dark", "Light"], index=0)
-        if theme == "Light":
-            st.markdown("""
-            <style>
-                .stApp {
-                    background-color: white;
-                    color: black;
-                }
-            </style>
-            """, unsafe_allow_html=True)
+        uploaded_file = st.file_uploader("Drag and drop file here", type=['csv'], help="Limit 200MB per file • CSV")
+        
+        st.markdown("---")
+        st.title("⚙️ Settings")
+        
+        dark_mode = st.checkbox("🌙 Dark Mode", value=False)
         
         st.markdown("---")
         
-        # Refresh button
         if st.button("🔄 Refresh Data"):
             st.cache_data.clear()
             st.rerun()
         
         st.markdown("---")
-        st.markdown("### 📊 About")
-        st.info("Real-time news analytics dashboard powered by AI sentiment analysis.")
+        st.title("🔄 Auto-Refresh")
+        auto_refresh = st.checkbox("Enable Auto-Refresh")
         
+        st.markdown("---")
+        st.title("📊 About")
+        st.info("AI-powered news analytics dashboard with sentiment analysis and real-time insights.")
+    
     # Load data
     df = load_data()
     
-    if df.empty:
-        st.warning("⚠️ No data available yet. The scraper will populate data automatically.")
-        st.info("💡 The GitHub Actions workflow runs daily at 8 AM IST to scrape fresh news.")
+    if df.empty and uploaded_file is not None:
+        df = pd.read_csv(uploaded_file)
+        st.markdown('<div class="success-banner">✅ Data loaded successfully! Last updated: ' + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '</div>', unsafe_allow_html=True)
+    elif not df.empty:
+        st.markdown('<div class="success-banner">✅ Data loaded successfully! Last updated: ' + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '</div>', unsafe_allow_html=True)
+    else:
+        st.warning("⚠️ No data available yet.")
+        st.info("💡 Upload a CSV file or run the scraper to populate data.")
         return
     
     # Metrics row
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.metric("📰 Total Articles", len(df))
+        st.metric("📰 Total Articles", len(df), delta=f"↑ {len(df)} new")
     
     with col2:
         positive_count = len(df[df['sentiment'] == 'Positive'])
-        st.metric("😊 Positive News", positive_count)
+        positive_pct = (positive_count / len(df) * 100) if len(df) > 0 else 0
+        st.metric("😊 Positive Sentiment", f"{positive_pct:.1f}%", delta=f"↑ {positive_count} articles")
     
     with col3:
-        negative_count = len(df[df['sentiment'] == 'Negative'])
-        st.metric("😟 Negative News", negative_count)
+        sources = df['source'].nunique()
+        st.metric("📡 News Sources", sources, delta="↑ Active")
     
     with col4:
-        neutral_count = len(df[df['sentiment'] == 'Neutral'])
-        st.metric("😐 Neutral News", neutral_count)
+        topics = df['topic'].nunique()
+        st.metric("🏷️ Topics Identified", topics, delta="↑ Categories")
     
     st.markdown("---")
     
@@ -138,51 +237,78 @@ def main():
         col1, col2 = st.columns(2)
         
         with col1:
-            # Sentiment distribution pie chart
+            st.subheader("📊 Sentiment Distribution")
             sentiment_counts = df['sentiment'].value_counts()
             fig_pie = px.pie(
                 values=sentiment_counts.values,
                 names=sentiment_counts.index,
-                title="Sentiment Distribution",
-                color_discrete_map={'Positive': '#00D9FF', 'Negative': '#FF4B4B', 'Neutral': '#A0A0A0'}
+                title="",
+                color_discrete_map={'Positive': '#10b981', 'Negative': '#ef4444', 'Neutral': '#93c5fd'},
+                hole=0.4
+            )
+            fig_pie.update_layout(
+                paper_bgcolor='white',
+                plot_bgcolor='white',
+                font=dict(color='#111827', size=14),
+                showlegend=True
             )
             st.plotly_chart(fig_pie, use_container_width=True)
         
         with col2:
-            # Topic distribution
-            topic_counts = df['topic'].value_counts().head(10)
+            st.subheader("📡 Top 10 News Sources")
+            source_counts = df['source'].value_counts().head(10)
             fig_bar = px.bar(
-                x=topic_counts.values,
-                y=topic_counts.index,
+                x=source_counts.values,
+                y=source_counts.index,
                 orientation='h',
-                title="Top 10 Topics",
-                labels={'x': 'Number of Articles', 'y': 'Topic'}
+                title="",
+                color=source_counts.values,
+                color_continuous_scale='Viridis'
+            )
+            fig_bar.update_layout(
+                paper_bgcolor='white',
+                plot_bgcolor='white',
+                font=dict(color='#111827', size=12),
+                xaxis_title="Number of Articles",
+                yaxis_title="",
+                showlegend=False
             )
             st.plotly_chart(fig_bar, use_container_width=True)
     
     with tab2:
-        # Sentiment over time
         if 'published_date' in df.columns:
-            df_time = df.groupby(['published_date', 'sentiment']).size().reset_index(name='count')
+            st.subheader("📈 Sentiment Trend Over Time")
+            df_time = df.groupby([df['published_date'].dt.date, 'sentiment']).size().reset_index(name='count')
             fig_line = px.line(
                 df_time,
                 x='published_date',
                 y='count',
                 color='sentiment',
-                title="Sentiment Trend Over Time",
-                labels={'published_date': 'Date', 'count': 'Number of Articles'}
+                title="",
+                color_discrete_map={'Positive': '#10b981', 'Negative': '#ef4444', 'Neutral': '#93c5fd'}
+            )
+            fig_line.update_layout(
+                paper_bgcolor='white',
+                plot_bgcolor='white',
+                font=dict(color='#111827')
             )
             st.plotly_chart(fig_line, use_container_width=True)
         
-        # Source analysis
-        source_sentiment = df.groupby(['source', 'sentiment']).size().unstack(fill_value=0)
-        fig_stacked = go.Figure(data=[
-            go.Bar(name='Positive', x=source_sentiment.index, y=source_sentiment.get('Positive', 0)),
-            go.Bar(name='Neutral', x=source_sentiment.index, y=source_sentiment.get('Neutral', 0)),
-            go.Bar(name='Negative', x=source_sentiment.index, y=source_sentiment.get('Negative', 0))
-        ])
-        fig_stacked.update_layout(barmode='stack', title='Articles by Source and Sentiment')
-        st.plotly_chart(fig_stacked, use_container_width=True)
+        st.subheader("🏷️ Topic Distribution")
+        topic_counts = df['topic'].value_counts().head(10)
+        fig_topic = px.bar(
+            x=topic_counts.index,
+            y=topic_counts.values,
+            title="",
+            color=topic_counts.values,
+            color_continuous_scale='Plasma'
+        )
+        fig_topic.update_layout(
+            paper_bgcolor='white',
+            plot_bgcolor='white',
+            font=dict(color='#111827')
+        )
+        st.plotly_chart(fig_topic, use_container_width=True)
     
     with tab3:
         st.subheader("☁️ Trending Keywords")
@@ -190,28 +316,34 @@ def main():
         col1, col2 = st.columns(2)
         
         with col1:
-            st.markdown("### Positive News Keywords")
+            st.markdown("### 😊 Positive News Keywords")
             positive_text = ' '.join(df[df['sentiment'] == 'Positive']['title'].dropna())
             if positive_text:
-                wordcloud = WordCloud(width=800, height=400, background_color='white').generate(positive_text)
-                fig, ax = plt.subplots(figsize=(10, 5))
+                wordcloud = WordCloud(
+                    width=800, 
+                    height=400, 
+                    background_color='white',
+                    colormap='Greens'
+                ).generate(positive_text)
+                fig, ax = plt.subplots(figsize=(10, 5), facecolor='white')
                 ax.imshow(wordcloud, interpolation='bilinear')
                 ax.axis('off')
                 st.pyplot(fig)
-            else:
-                st.info("No positive news available yet.")
         
         with col2:
-            st.markdown("### Negative News Keywords")
+            st.markdown("### 😟 Negative News Keywords")
             negative_text = ' '.join(df[df['sentiment'] == 'Negative']['title'].dropna())
             if negative_text:
-                wordcloud = WordCloud(width=800, height=400, background_color='white').generate(negative_text)
-                fig, ax = plt.subplots(figsize=(10, 5))
+                wordcloud = WordCloud(
+                    width=800, 
+                    height=400, 
+                    background_color='white',
+                    colormap='Reds'
+                ).generate(negative_text)
+                fig, ax = plt.subplots(figsize=(10, 5), facecolor='white')
                 ax.imshow(wordcloud, interpolation='bilinear')
                 ax.axis('off')
                 st.pyplot(fig)
-            else:
-                st.info("No negative news available yet.")
     
     with tab4:
         st.subheader("📰 Recent Articles")
@@ -221,7 +353,7 @@ def main():
         with col1:
             sentiment_filter = st.multiselect("Filter by Sentiment", options=df['sentiment'].unique(), default=df['sentiment'].unique())
         with col2:
-            source_filter = st.multiselect("Filter by Source", options=df['source'].unique(), default=df['source'].unique())
+            source_filter = st.multiselect("Filter by Source", options=df['source'].unique(), default=list(df['source'].unique())[:5])
         with col3:
             topic_filter = st.multiselect("Filter by Topic", options=df['topic'].unique(), default=df['topic'].unique())
         
@@ -233,14 +365,14 @@ def main():
         ]
         
         # Display articles
-        for idx, row in filtered_df.iterrows():
+        for idx, row in filtered_df.head(20).iterrows():
             with st.expander(f"📄 {row['title']}"):
                 col1, col2, col3 = st.columns([2, 1, 1])
                 with col1:
                     st.markdown(f"**Source:** {row['source']}")
                 with col2:
-                    sentiment_color = {'Positive': '🟢', 'Negative': '🔴', 'Neutral': '⚪'}
-                    st.markdown(f"**Sentiment:** {sentiment_color.get(row['sentiment'], '')} {row['sentiment']}")
+                    sentiment_emoji = {'Positive': '🟢', 'Negative': '🔴', 'Neutral': '⚪'}
+                    st.markdown(f"**Sentiment:** {sentiment_emoji.get(row['sentiment'], '')} {row['sentiment']}")
                 with col3:
                     st.markdown(f"**Topic:** {row['topic']}")
                 
