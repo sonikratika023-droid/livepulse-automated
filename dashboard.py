@@ -2,248 +2,252 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from supabase import create_client, Client
-import os
 from datetime import datetime
+import os
+from supabase import create_client, Client
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
+from collections import Counter
+import re
 
 # Page config
 st.set_page_config(
-    page_title="LivePulse v2.0 Enhanced",
+    page_title="LivePulse - News Analytics Dashboard",
     page_icon="📰",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Supabase connection
-@st.cache_resource
-def init_supabase():
-    url = os.environ.get("SUPABASE_URL")
-    key = os.environ.get("SUPABASE_KEY")
-    return create_client(url, key)
-
-supabase = init_supabase()
-
-# Custom CSS (same as before)
+# Custom CSS
 st.markdown("""
 <style>
     .main-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 2rem;
-        border-radius: 10px;
-        margin-bottom: 2rem;
+        font-size: 3rem;
+        font-weight: bold;
         text-align: center;
-        color: white;
-    }
-    .main-header h1 {
-        font-size: 2.5rem;
-        margin: 0;
-        font-weight: 700;
-    }
-    .main-header p {
-        font-size: 1.1rem;
-        margin: 0.5rem 0 0 0;
-        opacity: 0.9;
-    }
-    .success-banner {
-        background: #d1fae5;
-        color: #065f46;
-        padding: 1rem;
-        border-radius: 8px;
         margin-bottom: 2rem;
-        border-left: 4px solid #10b981;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .metric-card {
+        background-color: #f0f2f6;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .stButton>button {
+        width: 100%;
+        border-radius: 5px;
+        background-color: #667eea;
+        color: white;
     }
 </style>
 """, unsafe_allow_html=True)
 
+# Initialize Supabase
+@st.cache_resource
+def init_supabase():
+    url = os.getenv("SUPABASE_URL")
+    key = os.getenv("SUPABASE_KEY")
+    if not url or not key:
+        st.error("❌ Supabase credentials not found! Please configure environment variables.")
+        st.stop()
+    return create_client(url, key)
+
+supabase = init_supabase()
+
 # Load data from Supabase
-@st.cache_data(ttl=600)
+@st.cache_data(ttl=300)
 def load_data():
     try:
-        response = supabase.table('articles').select('*').execute()
-        return pd.DataFrame(response.data) if response.data else pd.DataFrame()
+        response = supabase.table('articles').select("*").execute()
+        if response.data:
+            df = pd.DataFrame(response.data)
+            if 'published_date' in df.columns:
+                df['published_date'] = pd.to_datetime(df['published_date'])
+            return df
+        return pd.DataFrame()
     except Exception as e:
         st.error(f"Error loading data: {e}")
         return pd.DataFrame()
 
-# Sidebar Navigation
-with st.sidebar:
-    st.image("https://img.icons8.com/fluency/96/news.png", width=80)
-    st.title("Navigation")
+# Main app
+def main():
+    st.markdown('<h1 class="main-header">📰 LivePulse News Analytics</h1>', unsafe_allow_html=True)
     
-    page = st.radio(
-        "Go to",
-        ["📊 Dashboard", "⚙️ Settings", "ℹ️ About"],
-        label_visibility="collapsed"
-    )
-    
-    st.divider()
-    dark_mode = st.checkbox("🌙 Dark Mode", value=False)
-    auto_refresh = st.checkbox("🔄 Auto-Refresh", value=False)
-
-# PAGE: Dashboard
-if page == "📊 Dashboard":
-    st.markdown("""
-    <div class="main-header">
-        <h1>📰 LivePulse v2.0 Enhanced</h1>
-        <p>Real-Time News Intelligence Dashboard with Advanced AI</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
+    # Sidebar
+    with st.sidebar:
+        st.title("⚙️ Controls")
+        
+        # Theme toggle
+        theme = st.radio("Theme", ["Dark", "Light"], index=0)
+        if theme == "Light":
+            st.markdown("""
+            <style>
+                .stApp {
+                    background-color: white;
+                    color: black;
+                }
+            </style>
+            """, unsafe_allow_html=True)
+        
+        st.markdown("---")
+        
+        # Refresh button
+        if st.button("🔄 Refresh Data"):
+            st.cache_data.clear()
+            st.rerun()
+        
+        st.markdown("---")
+        st.markdown("### 📊 About")
+        st.info("Real-time news analytics dashboard powered by AI sentiment analysis.")
+        
+    # Load data
     df = load_data()
     
-    if df is not None and not df.empty:
-        last_updated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        st.markdown(f"""
-        <div class="success-banner">
-            ✅ Data loaded successfully! Last updated: {last_updated}
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Metrics Row
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.metric("📊 Total Articles", len(df), delta=f"{len(df)} new")
-        
-        with col2:
-            if 'sentiment' in df.columns:
-                positive_pct = (df['sentiment'].value_counts(normalize=True).get('positive', 0) * 100)
-                positive_count = len(df[df['sentiment']=='positive'])
-                st.metric("😊 Positive Sentiment", f"{positive_pct:.1f}%", delta=f"{positive_count} articles")
-        
-        with col3:
-            sources = df['source'].nunique() if 'source' in df.columns else 0
-            st.metric("📰 News Sources", sources, delta="Active")
-        
-        with col4:
-            topics = df['topic'].nunique() if 'topic' in df.columns else 0
-            st.metric("🏷️ Topics Identified", topics, delta="Categories")
-        
-        st.divider()
-        
-        # Charts Row
+    if df.empty:
+        st.warning("⚠️ No data available yet. The scraper will populate data automatically.")
+        st.info("💡 The GitHub Actions workflow runs daily at 8 AM IST to scrape fresh news.")
+        return
+    
+    # Metrics row
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("📰 Total Articles", len(df))
+    
+    with col2:
+        positive_count = len(df[df['sentiment'] == 'Positive'])
+        st.metric("😊 Positive News", positive_count)
+    
+    with col3:
+        negative_count = len(df[df['sentiment'] == 'Negative'])
+        st.metric("😟 Negative News", negative_count)
+    
+    with col4:
+        neutral_count = len(df[df['sentiment'] == 'Neutral'])
+        st.metric("😐 Neutral News", neutral_count)
+    
+    st.markdown("---")
+    
+    # Tabs
+    tab1, tab2, tab3, tab4 = st.tabs(["📊 Overview", "📈 Analytics", "☁️ Word Clouds", "📰 Articles"])
+    
+    with tab1:
         col1, col2 = st.columns(2)
         
         with col1:
-            st.subheader("🎭 Sentiment Distribution")
-            if 'sentiment' in df.columns:
-                sentiment_counts = df['sentiment'].value_counts()
-                fig = px.pie(
-                    values=sentiment_counts.values,
-                    names=sentiment_counts.index,
-                    color_discrete_sequence=['#ef4444', '#10b981'],
-                    hole=0.4
-                )
-                fig.update_layout(height=400)
-                st.plotly_chart(fig, use_container_width=True)
+            # Sentiment distribution pie chart
+            sentiment_counts = df['sentiment'].value_counts()
+            fig_pie = px.pie(
+                values=sentiment_counts.values,
+                names=sentiment_counts.index,
+                title="Sentiment Distribution",
+                color_discrete_map={'Positive': '#00D9FF', 'Negative': '#FF4B4B', 'Neutral': '#A0A0A0'}
+            )
+            st.plotly_chart(fig_pie, use_container_width=True)
         
         with col2:
-            st.subheader("📊 Top 10 News Sources")
-            if 'source' in df.columns:
-                source_counts = df['source'].value_counts().head(10)
-                fig = px.bar(
-                    x=source_counts.values,
-                    y=source_counts.index,
-                    orientation='h',
-                    color=source_counts.values,
-                    color_continuous_scale='Viridis'
-                )
-                fig.update_layout(height=400, showlegend=False, yaxis_title="", xaxis_title="Articles")
-                st.plotly_chart(fig, use_container_width=True)
-        
-        # Topic Distribution
-        st.subheader("🏷️ Topic Distribution")
-        if 'topic' in df.columns:
+            # Topic distribution
             topic_counts = df['topic'].value_counts().head(10)
-            fig = px.bar(
+            fig_bar = px.bar(
                 x=topic_counts.values,
                 y=topic_counts.index,
                 orientation='h',
-                color=topic_counts.values,
-                color_continuous_scale='Plasma'
+                title="Top 10 Topics",
+                labels={'x': 'Number of Articles', 'y': 'Topic'}
             )
-            fig.update_layout(height=500, showlegend=False, yaxis_title="Topic", xaxis_title="Number of Articles")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig_bar, use_container_width=True)
+    
+    with tab2:
+        # Sentiment over time
+        if 'published_date' in df.columns:
+            df_time = df.groupby(['published_date', 'sentiment']).size().reset_index(name='count')
+            fig_line = px.line(
+                df_time,
+                x='published_date',
+                y='count',
+                color='sentiment',
+                title="Sentiment Trend Over Time",
+                labels={'published_date': 'Date', 'count': 'Number of Articles'}
+            )
+            st.plotly_chart(fig_line, use_container_width=True)
         
-        # Trending Keywords
+        # Source analysis
+        source_sentiment = df.groupby(['source', 'sentiment']).size().unstack(fill_value=0)
+        fig_stacked = go.Figure(data=[
+            go.Bar(name='Positive', x=source_sentiment.index, y=source_sentiment.get('Positive', 0)),
+            go.Bar(name='Neutral', x=source_sentiment.index, y=source_sentiment.get('Neutral', 0)),
+            go.Bar(name='Negative', x=source_sentiment.index, y=source_sentiment.get('Negative', 0))
+        ])
+        fig_stacked.update_layout(barmode='stack', title='Articles by Source and Sentiment')
+        st.plotly_chart(fig_stacked, use_container_width=True)
+    
+    with tab3:
         st.subheader("☁️ Trending Keywords")
+        
         col1, col2 = st.columns(2)
         
-        if 'sentiment' in df.columns and 'title' in df.columns:
-            with col1:
-                st.write("**Positive News Keywords**")
-                positive_text = ' '.join(df[df['sentiment']=='positive']['title'].dropna())
-                if positive_text:
-                    wordcloud = WordCloud(width=800, height=400, background_color='white', colormap='Greens').generate(positive_text)
-                    fig, ax = plt.subplots(figsize=(10, 5))
-                    ax.imshow(wordcloud, interpolation='bilinear')
-                    ax.axis('off')
-                    st.pyplot(fig)
-            
-            with col2:
-                st.write("**Negative News Keywords**")
-                negative_text = ' '.join(df[df['sentiment']=='negative']['title'].dropna())
-                if negative_text:
-                    wordcloud = WordCloud(width=800, height=400, background_color='white', colormap='Reds').generate(negative_text)
-                    fig, ax = plt.subplots(figsize=(10, 5))
-                    ax.imshow(wordcloud, interpolation='bilinear')
-                    ax.axis('off')
-                    st.pyplot(fig)
+        with col1:
+            st.markdown("### Positive News Keywords")
+            positive_text = ' '.join(df[df['sentiment'] == 'Positive']['title'].dropna())
+            if positive_text:
+                wordcloud = WordCloud(width=800, height=400, background_color='white').generate(positive_text)
+                fig, ax = plt.subplots(figsize=(10, 5))
+                ax.imshow(wordcloud, interpolation='bilinear')
+                ax.axis('off')
+                st.pyplot(fig)
+            else:
+                st.info("No positive news available yet.")
         
-        # Articles Table
-        st.subheader("📄 Recent Articles")
-        display_cols = ['title', 'source', 'sentiment', 'topic', 'published_date']
-        available_cols = [col for col in display_cols if col in df.columns]
-        st.dataframe(df[available_cols].head(50), use_container_width=True)
+        with col2:
+            st.markdown("### Negative News Keywords")
+            negative_text = ' '.join(df[df['sentiment'] == 'Negative']['title'].dropna())
+            if negative_text:
+                wordcloud = WordCloud(width=800, height=400, background_color='white').generate(negative_text)
+                fig, ax = plt.subplots(figsize=(10, 5))
+                ax.imshow(wordcloud, interpolation='bilinear')
+                ax.axis('off')
+                st.pyplot(fig)
+            else:
+                st.info("No negative news available yet.")
+    
+    with tab4:
+        st.subheader("📰 Recent Articles")
         
-    else:
-        st.warning("⚠️ No data available. Scraper will run daily at 8 AM IST automatically.")
+        # Filters
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            sentiment_filter = st.multiselect("Filter by Sentiment", options=df['sentiment'].unique(), default=df['sentiment'].unique())
+        with col2:
+            source_filter = st.multiselect("Filter by Source", options=df['source'].unique(), default=df['source'].unique())
+        with col3:
+            topic_filter = st.multiselect("Filter by Topic", options=df['topic'].unique(), default=df['topic'].unique())
+        
+        # Apply filters
+        filtered_df = df[
+            (df['sentiment'].isin(sentiment_filter)) &
+            (df['source'].isin(source_filter)) &
+            (df['topic'].isin(topic_filter))
+        ]
+        
+        # Display articles
+        for idx, row in filtered_df.iterrows():
+            with st.expander(f"📄 {row['title']}"):
+                col1, col2, col3 = st.columns([2, 1, 1])
+                with col1:
+                    st.markdown(f"**Source:** {row['source']}")
+                with col2:
+                    sentiment_color = {'Positive': '🟢', 'Negative': '🔴', 'Neutral': '⚪'}
+                    st.markdown(f"**Sentiment:** {sentiment_color.get(row['sentiment'], '')} {row['sentiment']}")
+                with col3:
+                    st.markdown(f"**Topic:** {row['topic']}")
+                
+                st.markdown(f"**Published:** {row.get('published_date', 'N/A')}")
+                
+                if 'url' in row and row['url']:
+                    st.markdown(f"[🔗 Read Full Article]({row['url']})")
 
-# PAGE: Settings
-elif page == "⚙️ Settings":
-    st.title("⚙️ Settings")
-    st.subheader("🎨 Appearance")
-    theme = st.selectbox("Theme", ["Light", "Dark", "Auto"])
-    st.subheader("🔄 Data Refresh")
-    st.info("Dashboard automatically refreshes every 10 minutes")
-    st.info("Scraper runs daily at 8:00 AM IST via GitHub Actions")
-
-# PAGE: About
-elif page == "ℹ️ About":
-    st.title("ℹ️ About LivePulse v2.0 Enhanced")
-    st.markdown("""
-    ### 📰 LivePulse News Analytics Dashboard
-    
-    **Version:** 2.0 Enhanced with Full Automation
-    
-    **Features:**
-    - 🤖 Fully automated news scraping (Daily at 8 AM IST)
-    - 📊 Real-time sentiment analysis
-    - 🏷️ AI-powered topic categorization
-    - 📈 Interactive data visualizations
-    - ☁️ Word cloud generation
-    - 🔄 Automatic data refresh
-    - 📅 Date-wise tracking
-    
-    **Technology Stack:**
-    - **Frontend:** Streamlit
-    - **Database:** Supabase (PostgreSQL)
-    - **Visualization:** Plotly, WordCloud, Matplotlib
-    - **AI:** TextBlob, Custom NLP
-    - **Automation:** GitHub Actions
-    - **Deployment:** Streamlit Cloud
-    
-    **News Sources (15+):**
-    - BBC, CNN, Reuters, The Guardian
-    - Al Jazeera, India Today, Hindustan Times
-    - Live Mint, Economic Times, News18
-    - And more...
-    
-    ---
-    
-    **Developer:** Sonikratika
-    **GitHub:** [livepulse-automated](https://github.com/sonikratika023-droid/livepulse-automated)
-    **Portfolio:** Professional Data Analytics Project
-    """)
+if __name__ == "__main__":
+    main()
