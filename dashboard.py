@@ -18,7 +18,7 @@ from supabase import create_client
 # PAGE CONFIGURATION
 # ========================================
 st.set_page_config(
-    page_title="LivePulse v2.0 Enhanced",
+    page_title="LivePulse",
     page_icon="📰",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -480,6 +480,7 @@ st.markdown("""
     <p> <b>Kratika Soni</b> |  Data Analytics Student |  sonikratika023@gmail.com</p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
