@@ -16,16 +16,15 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS - FIXED WITH VISIBLE TEXT
+# BULLETPROOF CSS - GUARANTEED VISIBLE TEXT
 st.markdown("""
 <style>
-    /* Light background */
+    /* Force white background everywhere */
     .stApp {
-        background-color: #ffffff;
-        color: #000000;
+        background-color: #ffffff !important;
     }
     
-    /* Colorful gradient header */
+    /* Gradient header */
     .main-header {
         font-size: 3rem;
         font-weight: bold;
@@ -34,29 +33,47 @@ st.markdown("""
         margin-bottom: 10px;
         background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
         border-radius: 15px;
-        color: white;
+        color: white !important;
         box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
     }
     
     .subtitle {
         text-align: center;
-        color: #6b7280;
+        color: #6b7280 !important;
         font-size: 1.2rem;
         margin-bottom: 30px;
     }
     
-    /* Success message with light green */
+    /* Success banner */
     .success-banner {
         background-color: #d1fae5;
         border-left: 4px solid #10b981;
         padding: 15px 20px;
         border-radius: 8px;
         margin: 20px 0;
-        color: #047857;
+        color: #047857 !important;
         font-weight: 500;
     }
     
-    /* FIXED METRIC CARDS WITH VISIBLE TEXT */
+    /* FORCE BLACK TEXT ON ALL METRICS */
+    div[data-testid="stMetricLabel"] {
+        color: #111827 !important;
+        font-weight: 600 !important;
+        font-size: 0.875rem !important;
+    }
+    
+    div[data-testid="stMetricValue"] {
+        color: #111827 !important;
+        font-size: 2rem !important;
+        font-weight: bold !important;
+    }
+    
+    div[data-testid="stMetricDelta"] {
+        color: #10b981 !important;
+        font-weight: 600 !important;
+    }
+    
+    /* Metric container styling */
     div[data-testid="metric-container"] {
         background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
         padding: 20px;
@@ -65,40 +82,26 @@ st.markdown("""
         border: 1px solid #d1d5db;
     }
     
-    /* Force black text on metrics */
-    div[data-testid="metric-container"] label {
-        color: #1f2937 !important;
-        font-weight: 600 !important;
-        font-size: 0.875rem !important;
-    }
-    
-    div[data-testid="metric-container"] [data-testid="stMetricValue"] {
-        color: #111827 !important;
-        font-size: 2rem !important;
-        font-weight: bold !important;
-    }
-    
-    div[data-testid="metric-container"] [data-testid="stMetricDelta"] {
-        color: #10b981 !important;
-        font-weight: 500 !important;
-    }
-    
-    /* Sidebar light theme */
+    /* Sidebar */
     section[data-testid="stSidebar"] {
-        background-color: #f9fafb;
+        background-color: #f9fafb !important;
         border-right: 1px solid #e5e7eb;
     }
     
-    section[data-testid="stSidebar"] * {
-        color: #1f2937;
+    section[data-testid="stSidebar"] h1,
+    section[data-testid="stSidebar"] h2,
+    section[data-testid="stSidebar"] h3,
+    section[data-testid="stSidebar"] label,
+    section[data-testid="stSidebar"] p {
+        color: #111827 !important;
     }
     
     /* Button styling */
     .stButton>button {
         width: 100%;
         border-radius: 8px;
-        background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
-        color: white;
+        background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%) !important;
+        color: white !important;
         border: none;
         padding: 12px;
         font-weight: 600;
@@ -106,51 +109,55 @@ st.markdown("""
     }
     
     .stButton>button:hover {
-        background: linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%);
+        background: linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%) !important;
         box-shadow: 0 4px 8px rgba(99, 102, 241, 0.4);
     }
     
-    /* Tab styling for light theme */
+    /* Tabs */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
-        background-color: transparent;
     }
     
     .stTabs [data-baseweb="tab"] {
         background-color: #f3f4f6;
         border-radius: 8px;
-        color: #374151;
+        color: #374151 !important;
         padding: 12px 24px;
         font-weight: 500;
         border: 1px solid #e5e7eb;
     }
     
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+        background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%) !important;
         color: white !important;
         border: none;
     }
     
-    /* Subheaders - VISIBLE BLACK TEXT */
+    /* ALL HEADINGS BLACK */
     h1, h2, h3, h4, h5, h6 {
         color: #111827 !important;
-        font-weight: 600;
+        font-weight: 600 !important;
     }
     
-    /* Expander styling */
+    /* ALL PARAGRAPHS BLACK */
+    p, span, div, label {
+        color: #374151 !important;
+    }
+    
+    /* Expander */
     .streamlit-expanderHeader {
         background-color: #f9fafb;
         border-radius: 8px;
         color: #111827 !important;
     }
     
-    /* All text should be visible */
-    p, span, div {
-        color: #374151;
+    /* File uploader */
+    .stFileUploader label {
+        color: #111827 !important;
     }
     
-    /* File uploader text */
-    .stFileUploader label {
+    /* Checkbox labels */
+    .stCheckbox label {
         color: #111827 !important;
     }
 </style>
@@ -185,7 +192,7 @@ def load_data():
 
 # Main app
 def main():
-    # Colorful gradient header
+    # Header
     st.markdown('<div class="main-header">📰 LivePulse v2.0 Enhanced</div>', unsafe_allow_html=True)
     st.markdown('<p class="subtitle">Real-Time News Intelligence Dashboard with Advanced AI</p>', unsafe_allow_html=True)
     
@@ -213,7 +220,7 @@ def main():
         
         st.markdown("---")
         st.title("📊 About")
-        st.info("AI-powered news analytics dashboard with sentiment analysis.")
+        st.info("AI-powered news analytics dashboard.")
     
     # Load data
     df = load_data()
@@ -225,10 +232,10 @@ def main():
         st.markdown('<div class="success-banner">✅ Data loaded successfully! Last updated: ' + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '</div>', unsafe_allow_html=True)
     else:
         st.warning("⚠️ No data available yet.")
-        st.info("💡 Upload a CSV file or run the scraper.")
+        st.info("💡 Upload CSV or run scraper.")
         return
     
-    # Metrics row - WITH VISIBLE TEXT
+    # Metrics
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
@@ -261,15 +268,15 @@ def main():
             fig_pie = px.pie(
                 values=sentiment_counts.values,
                 names=sentiment_counts.index,
-                title="",
                 color_discrete_map={'Positive': '#10b981', 'Negative': '#ef4444', 'Neutral': '#93c5fd'},
                 hole=0.4
             )
             fig_pie.update_layout(
                 paper_bgcolor='white',
                 plot_bgcolor='white',
-                font=dict(color='#111827', size=14),
-                showlegend=True
+                font=dict(color='#111827', size=14, family='Arial'),
+                showlegend=True,
+                margin=dict(t=30, b=30, l=30, r=30)
             )
             st.plotly_chart(fig_pie, use_container_width=True)
         
@@ -280,17 +287,17 @@ def main():
                 x=source_counts.values,
                 y=source_counts.index,
                 orientation='h',
-                title="",
                 color=source_counts.values,
                 color_continuous_scale='Viridis'
             )
             fig_bar.update_layout(
                 paper_bgcolor='white',
                 plot_bgcolor='white',
-                font=dict(color='#111827', size=12),
-                xaxis_title="Number of Articles",
-                yaxis_title="",
-                showlegend=False
+                font=dict(color='#111827', size=12, family='Arial'),
+                xaxis=dict(title="Number of Articles", titlefont=dict(color='#111827'), tickfont=dict(color='#111827')),
+                yaxis=dict(title="", tickfont=dict(color='#111827')),
+                showlegend=False,
+                margin=dict(t=30, b=30, l=30, r=30)
             )
             st.plotly_chart(fig_bar, use_container_width=True)
     
@@ -303,13 +310,15 @@ def main():
                 x='published_date',
                 y='count',
                 color='sentiment',
-                title="",
                 color_discrete_map={'Positive': '#10b981', 'Negative': '#ef4444', 'Neutral': '#93c5fd'}
             )
             fig_line.update_layout(
                 paper_bgcolor='white',
                 plot_bgcolor='white',
-                font=dict(color='#111827')
+                font=dict(color='#111827', size=12, family='Arial'),
+                xaxis=dict(title="Date", titlefont=dict(color='#111827'), tickfont=dict(color='#111827')),
+                yaxis=dict(title="Number of Articles", titlefont=dict(color='#111827'), tickfont=dict(color='#111827')),
+                margin=dict(t=30, b=30, l=30, r=30)
             )
             st.plotly_chart(fig_line, use_container_width=True)
         
@@ -318,14 +327,17 @@ def main():
         fig_topic = px.bar(
             x=topic_counts.index,
             y=topic_counts.values,
-            title="",
             color=topic_counts.values,
             color_continuous_scale='Plasma'
         )
         fig_topic.update_layout(
             paper_bgcolor='white',
             plot_bgcolor='white',
-            font=dict(color='#111827')
+            font=dict(color='#111827', size=12, family='Arial'),
+            xaxis=dict(title="Topic", titlefont=dict(color='#111827'), tickfont=dict(color='#111827')),
+            yaxis=dict(title="Number of Articles", titlefont=dict(color='#111827'), tickfont=dict(color='#111827')),
+            showlegend=False,
+            margin=dict(t=30, b=30, l=30, r=30)
         )
         st.plotly_chart(fig_topic, use_container_width=True)
     
@@ -367,7 +379,6 @@ def main():
     with tab4:
         st.subheader("📰 Recent Articles")
         
-        # Filters
         col1, col2, col3 = st.columns(3)
         with col1:
             sentiment_filter = st.multiselect("Filter by Sentiment", options=df['sentiment'].unique(), default=df['sentiment'].unique())
@@ -376,14 +387,12 @@ def main():
         with col3:
             topic_filter = st.multiselect("Filter by Topic", options=df['topic'].unique(), default=df['topic'].unique())
         
-        # Apply filters
         filtered_df = df[
             (df['sentiment'].isin(sentiment_filter)) &
             (df['source'].isin(source_filter)) &
             (df['topic'].isin(topic_filter))
         ]
         
-        # Display articles
         for idx, row in filtered_df.head(20).iterrows():
             with st.expander(f"📄 {row['title']}"):
                 col1, col2, col3 = st.columns([2, 1, 1])
