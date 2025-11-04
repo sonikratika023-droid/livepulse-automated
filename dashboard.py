@@ -181,7 +181,7 @@ with st.sidebar:
     st.markdown("---")
     st.header("📊 About")
     st.info("""
-    **LivePulse v2.0 Enhanced**
+    **LivePulse **
 
     ✨ Features:
     - 20+ news sources
@@ -476,10 +476,11 @@ else:
 st.markdown("---")
 st.markdown("""
 <div style='text-align: center; color: #6b7280; padding: 2rem;'>
-    <p><strong>LivePulse v2.0 Enhanced</strong> | Built with Python, Streamlit & AI</p>
+    <p><strong>LivePulse </strong> | Built with Python, Streamlit & AI</p>
     <p> <b>Kratika Soni</b> |  Data Analytics Student |  sonikratika023@gmail.com</p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
