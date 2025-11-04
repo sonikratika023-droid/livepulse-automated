@@ -129,7 +129,7 @@ def load_data_from_supabase():
 # ========================================
 st.markdown("""
 <div class="main-header">
-    <h1>📰 LivePulse v2.0 Enhanced</h1>
+    <h1>📰 LivePulse </h1>
     <p style='font-size: 1.2rem; margin-top: 0.5rem;'>
         Real-Time News Intelligence Dashboard with Advanced AI
     </p>
@@ -139,19 +139,37 @@ st.markdown("""
 # ========================================
 # SIDEBAR - FILE UPLOAD & SETTINGS
 # ========================================
+# ========================================
+# SIDEBAR - ADMIN ACCESS & SETTINGS
+# ========================================
+# Admin password (ONLY YOU CAN UPLOAD)
+ADMIN_PASSWORD = "kratika2025"  # Change this password!
+
 with st.sidebar:
-    st.header("📁 Upload Data")
-    uploaded_file = st.file_uploader(
-        "Upload CSV (optional)",
-        type=['csv'],
-        help="Upload CSV file or use Supabase data"
-    )
-
+    # Admin login section (collapsed by default)
+    with st.expander("🔐 Admin Access", expanded=False):
+        admin_password = st.text_input("Enter Admin Password", type="password", key="admin_pwd")
+        
+        if admin_password == ADMIN_PASSWORD:
+            st.success("✅ Admin access granted!")
+            st.header("📁 Upload Data")
+            uploaded_file = st.file_uploader(
+                "Upload CSV (Admin only)",
+                type=['csv'],
+                help="Upload CSV file or use Supabase data"
+            )
+        elif admin_password:
+            st.error("❌ Incorrect password!")
+            uploaded_file = None
+        else:
+            uploaded_file = None
+    
     st.markdown("---")
-
-    # Settings
+    
+    # Settings (visible to all)
     st.header("⚙️ Settings")
     dark_mode = st.checkbox("🌙 Dark Mode", value=False)
+
 
     st.markdown("---")
     
@@ -462,5 +480,6 @@ st.markdown("""
     <p> <b>Kratika Soni</b> |  Data Analytics Student |  sonikratika023@gmail.com</p>
 </div>
 """, unsafe_allow_html=True)
+
 
 
