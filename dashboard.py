@@ -16,12 +16,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS - CLEAN LIGHT THEME WITH GRADIENT
+# Custom CSS - FIXED WITH VISIBLE TEXT
 st.markdown("""
 <style>
     /* Light background */
     .stApp {
         background-color: #ffffff;
+        color: #000000;
     }
     
     /* Colorful gradient header */
@@ -55,7 +56,7 @@ st.markdown("""
         font-weight: 500;
     }
     
-    /* Metric cards styling */
+    /* FIXED METRIC CARDS WITH VISIBLE TEXT */
     div[data-testid="metric-container"] {
         background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
         padding: 20px;
@@ -64,24 +65,32 @@ st.markdown("""
         border: 1px solid #d1d5db;
     }
     
+    /* Force black text on metrics */
     div[data-testid="metric-container"] label {
-        color: #374151 !important;
+        color: #1f2937 !important;
         font-weight: 600 !important;
+        font-size: 0.875rem !important;
     }
     
     div[data-testid="metric-container"] [data-testid="stMetricValue"] {
         color: #111827 !important;
         font-size: 2rem !important;
+        font-weight: bold !important;
     }
     
     div[data-testid="metric-container"] [data-testid="stMetricDelta"] {
         color: #10b981 !important;
+        font-weight: 500 !important;
     }
     
     /* Sidebar light theme */
     section[data-testid="stSidebar"] {
         background-color: #f9fafb;
         border-right: 1px solid #e5e7eb;
+    }
+    
+    section[data-testid="stSidebar"] * {
+        color: #1f2937;
     }
     
     /* Button styling */
@@ -118,13 +127,13 @@ st.markdown("""
     
     .stTabs [aria-selected="true"] {
         background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
-        color: white;
+        color: white !important;
         border: none;
     }
     
-    /* Subheaders */
-    h2, h3 {
-        color: #111827;
+    /* Subheaders - VISIBLE BLACK TEXT */
+    h1, h2, h3, h4, h5, h6 {
+        color: #111827 !important;
         font-weight: 600;
     }
     
@@ -132,7 +141,17 @@ st.markdown("""
     .streamlit-expanderHeader {
         background-color: #f9fafb;
         border-radius: 8px;
-        color: #111827;
+        color: #111827 !important;
+    }
+    
+    /* All text should be visible */
+    p, span, div {
+        color: #374151;
+    }
+    
+    /* File uploader text */
+    .stFileUploader label {
+        color: #111827 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -194,7 +213,7 @@ def main():
         
         st.markdown("---")
         st.title("📊 About")
-        st.info("AI-powered news analytics dashboard with sentiment analysis and real-time insights.")
+        st.info("AI-powered news analytics dashboard with sentiment analysis.")
     
     # Load data
     df = load_data()
@@ -206,10 +225,10 @@ def main():
         st.markdown('<div class="success-banner">✅ Data loaded successfully! Last updated: ' + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '</div>', unsafe_allow_html=True)
     else:
         st.warning("⚠️ No data available yet.")
-        st.info("💡 Upload a CSV file or run the scraper to populate data.")
+        st.info("💡 Upload a CSV file or run the scraper.")
         return
     
-    # Metrics row
+    # Metrics row - WITH VISIBLE TEXT
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
