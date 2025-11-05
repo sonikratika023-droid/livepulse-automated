@@ -1,9 +1,9 @@
-streamlit
 supabase
-pandas
-plotly
-textblob
-wordcloud
-matplotlib
-beautifulsoup4
 requests
+pandas
+python-dotenv
+textblob
+nltk
+feedparser
+beautifulsoup4
+lxml
